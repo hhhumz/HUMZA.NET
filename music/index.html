@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      [humzfade] {opacity: 0;}
+    </style>
+    <title>humza.net</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=0.75, minimum-scale=0.75"/>
+    <link rel="stylesheet" href="../assets/style_main.css"/>
+    <link rel="stylesheet" href="../assets/style_fonts.css"/>
+    <link rel="icon" type="image/png" sizes="128x128" href="assets/h_icon.png">
+  </head>
+  <body humztheme="dark" humzloading="true">
+
+    <div id="loadingIndicator">Loading...</div>
+
+    <div class="theme-switch">
+      &#9790; <div class="switch-body" id="themeSwitcher" active="false"><div class="switch-head"></div></div> &#9728;
+    </div>
+
+    <div humzfade="0">
+      <h1>
+        <span class="humz-header">
+          <span class="header-letter">h</span>
+          <span class="header-letter">u</span>
+          <span class="header-letter">m</span>
+          <span class="header-letter">z</span>
+          <span class="header-letter">a</span>
+          <span class="header-letter">.</span>
+          <span class="header-letter">n</span>
+          <span class="header-letter">e</span>
+          <span class="header-letter">t</span>
+        </span>
+      </h1>
+    </div>
+
+    <div class="showcase" humzfade="2">
+
+      <h2>Snippets</h2>
+
+      <div class="showcase-row" humzview="/">
+        <div class="showcase-content nolink">
+          <h3>COAT FOR THE WINTER / NO FLAWS</h3>
+          suli ft. humz - 11/12/22<br/>
+          <audio controls>
+            <source src="audio/coat_111222.mp3" type="audio/mp3">
+            Your browser does not support HTML5 audio, please upgrade... :)
+          </audio>
+        </div>
+      </div>
+
+    </div>
+
+    
+    <div class="footer">&copy; 2022 Humza Khan</div>
+    <script type="text/javascript">
+      // Initialize document
+      const divs = document.getElementsByTagName("div");
+      let flexContainers = [];
+      let flexSubs = [];
+      let faders = [];
+
+      for (let i=0; i<divs.length; i++) {
+
+        if (divs[i].getAttribute("humzview") !== null) {
+          flexContainers.push(divs[i]);
+        }
+        if (divs[i].getAttribute("humzwidth") !== null) {
+          flexSubs.push(divs[i]);
+        }
+        if (divs[i].getAttribute("humzlink") !== null) {
+          divs[i].addEventListener("click", function(e) {
+            window.open(this.getAttribute("humzlink"), "_blank");
+          })
+        }
+        if (divs[i].getAttribute("humzfade") !== null) {
+          const xi = parseInt(divs[i].getAttribute("humzfade"));
+          if (Number.isInteger(xi)) {
+            faders[xi] = {element: divs[i], opacity: 0};
+          }
+        }
+      }
+
+      // Change to portrait/landscape view
+      function resizePage() {
+        for (let i=0; i<flexContainers.length; i++) {
+          if (window.innerWidth > window.innerHeight) {
+            flexContainers[i].setAttribute("humzview","landscape");
+          } else {
+            flexContainers[i].setAttribute("humzview","portrait");
+          }
+        }
+      }
+      window.addEventListener("resize", resizePage);
+      resizePage();
+
+      // Assign widths
+      for (let i=0; i<flexSubs.length; i++) {
+        const w = flexSubs[i].getAttribute("humzwidth") + "%";
+        const s = `
+          -webkit-box-flex: 0 1 ${w};
+          -moz-box-flex:  0 1 ${w};
+          -webkit-flex: 0 1 ${w};
+          -ms-flex: 0 1 ${w};
+          flex: 0 1 ${w};
+        `
+        flexSubs[i].setAttribute("style", s);
+      }
+
+      // Animate header
+      let headerLetters = document.getElementsByClassName("header-letter");
+      function doHeaderAnimation() {
+        const now = Date.now();
+        for (let i=0; i<headerLetters.length; i++) {
+          let phase = (i/headerLetters.length) * 2 * Math.PI;
+          let jump = Math.sin((now/500) + phase) * 4;
+          headerLetters[i].style.top = String(jump)+"px";
+        }
+        requestAnimationFrame(doHeaderAnimation);
+      }
+      doHeaderAnimation();
+
+      // Wait for fonts to load, then fade elements in
+      let currentFader = 0;
+      function doFade() {
+        document.body.setAttribute("humzloading", "false");
+        document.getElementById("loadingIndicator").style.display = "none";
+        faders[currentFader].opacity += 0.03;
+        faders[currentFader].element.style.opacity = String(faders[currentFader].opacity);
+        if (faders[currentFader].opacity >= 1) {
+          do {
+            currentFader++;
+          } while ((faders[currentFader] == undefined) && (currentFader < faders.length));
+        }
+        if (currentFader < faders.length) {
+          requestAnimationFrame(doFade);
+        }
+      }
+      const fonts = [
+        "RobotoCondensedBold",
+        "RobotoRegular",
+        "RobotoLight"
+      ];
+      const fontPromises = [];
+      for (x of fonts) {
+        fontPromises.push(document.fonts.load("24px " + x));
+      }
+      Promise.all(fontPromises).then(doFade);
+      //doFade();
+
+      // Switches
+      let switches = document.querySelectorAll(".switch-body");
+      for (const x of switches) {
+        x.addEventListener("click", function() {
+          this.setAttribute("active", ((this.getAttribute("active") == "false")?("true"):("false")) );
+        });
+      }
+
+      // Change theme on button press
+      function toggleTheme() {
+        if (document.body.getAttribute("humztheme") == "dark") {
+          document.body.setAttribute("humztheme", "light");
+          document.cookie = "humzanet_theme=light;max-age=31536000";
+        } else {
+          document.body.setAttribute("humztheme", "dark");
+          document.cookie = "humzanet_theme=dark;max-age=31536000";
+        }
+      }
+      document.getElementById("themeSwitcher").addEventListener("click", toggleTheme);
+
+      // Use cookies to save users' preferred theme
+      const themeCookie = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('humzanet_theme='))
+        ?.split('=')[1];
+      if (themeCookie == "light") {
+        document.getElementById("themeSwitcher").click();
+      }
+    </script>
+  </body>
+</html>

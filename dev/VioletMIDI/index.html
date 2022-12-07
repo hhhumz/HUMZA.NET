@@ -1,0 +1,122 @@
+<html>
+  <style>
+    body {
+      padding: 0;
+      margin: 0;
+      background-color: #181818;
+      font-family: "Monaco","Courier New";
+      color: #c0c0c0;
+      overflow: hidden;
+      -moz-user-select: -moz-none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    #intro {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border: 6px solid #c0c0c0;
+      border-radius: 16px;
+      margin: 5% auto;
+      padding: 48px 48px;
+      width: 60%;
+      font-family:"RobotoLight", "Helvetica";
+      letter-spacing: 2px;
+      text-align: center;
+    }
+    #intro div {
+      margin-bottom: 16px;
+    }
+    .heading {
+      font-family: "RobotoCondensedBold", "Verdana";
+      font-size: 48px;
+      letter-spacing: -2px;
+      margin-bottom: 12px;
+      color:#8000ff;
+    }
+    .sub1 {
+      font-size: 24px;
+      font-family: "RobotoMedium", "Helvetica";
+      letter-spacing: 1px;
+    }
+    .sub2 {
+      font-size: 18px;
+    }
+    .sub3 {
+      font-size: 20px;
+      letter-spacing:0;
+      color: #d02040;
+      font-family: "RobotoMedium", "Helvetica";
+    }
+    .footer {
+      font-size: 12px;
+      margin-top: 24px;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+    }
+    .violet-button {
+      width: 45%;
+      font-family: "RobotoBlack", "Verdana";
+      font-size: 18px;
+      padding: 16px 16px;
+      background-color: #8000ff;
+      border: none;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      border: 3px solid #6000c0;
+    }
+    .violet-button:active {
+      background-color: #6000c0;
+    }
+    .violet-button:first-of-type {
+      border-radius: 12px 0 0 12px;
+      border-right: 1.5px solid #6000c0;
+    }
+    .violet-button:last-of-type {
+      border-radius: 0 12px 12px 0;
+      border-left: 1.5px solid #6000c0;
+    }
+    a {
+      font-family:"RobotoBold";
+      text-decoration: none;
+      color: #b068ff;
+    }
+    a:hover {
+      font-family:"RobotoBold";
+      text-decoration: none;
+      color: #8000ff;
+    }
+  </style>
+  <head>
+    <title>VioletMIDI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+    <link rel="stylesheet" href="../../assets/style_fonts.css"
+  </head>
+  <body>
+    <canvas style="display: none;" id="CanvasMain"></canvas>
+    <div id="intro">
+      <div class="heading">VioletMIDI</div>
+      <div class="sub1">A Web-Based MIDI Sequencer</div>
+      <div class="sub2">
+        Ready to start composing? Choose your device type below to get started.
+      </div>
+      <div class="sub3">
+        This app is in the very early stages of development, and most features are still being implemented.
+      </div>
+      <div class="button-container">
+        <input type="button" class="violet-button" value="Mobile" id="initMobile"/>
+        <input type="button" class="violet-button" value="Desktop" id="initDesktop"/>
+      </div>
+      <div class="footer">
+        v0.0.2 &copy; 2022 <a href="http://humza.net">Humza Khan</a>
+      </div>
+    </div>
+
+    <script type="text/javascript" src="Tone.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+  </body>
+</html>

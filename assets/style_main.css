@@ -1,0 +1,232 @@
+body[humzloading=true] {
+  cursor: progress;
+}
+#loadingIndicator {
+  display: block;
+  content: "Loading ...";
+  color: var(--theme-highlight);
+  position: fixed;
+  width: 100%;
+  margin: 0 auto;
+  top: 30%;
+  font-family: "Helvetica";
+  font-style: italic;
+  text-align: center;
+  font-size: 24px;
+}
+body, body[humztheme=dark] {
+  --theme-bg: hsl(210, 100%, 12%);
+  --theme-h2: hsl(210, 50%, 60%);
+  --theme-h3: hsl(210, 100%, 35%);
+  --theme-contrast: #c0c0c0;
+  --theme-highlight: #c0c0c0;
+  --theme-lowlight: #303030;
+}
+body[humztheme=light] {
+  --theme-bg: #e0e0e0;
+  --theme-h2: hsl(210, 50%, 40%);
+  --theme-h3: hsl(210, 50%, 50%);
+  --theme-contrast: hsl(210, 50%, 20%);
+  --theme-highlight: #303030;
+  --theme-lowlight: #c0c0c0;
+}
+
+body {
+  transition: 0.2s;
+  padding: 32px 5%;
+  background-color: var(--theme-bg);
+  color: var(--theme-highlight);
+  font-family: "RobotoLight", "Helvetica";
+  font-size: 20px;
+}
+
+h1 {
+  font-size: 72px;
+  font-family: "RobotoBlack", "Helvetica";
+  font-weight: bold;
+  text-align: center;
+  margin: 0 auto 32px auto;
+  letter-spacing: -8px;
+}
+
+.emphasis {
+  font-family: "RobotoBlack", "Helvetica";
+}
+.italic {
+  font-style: italic;
+}
+
+.humz-header {
+  user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+}
+
+.header-letter {
+  letter-spacing: -8px;
+  margin: 0;
+  position: relative;
+  text-shadow: 0 1px 0 hsl(210, 100%, 50%), 0 2px 0 hsl(210, 100%, 45%), 0 3px 0 hsl(210, 100%, 40%), 0 4px 0 hsl(210, 100%, 35%);
+}
+
+h2 {
+  margin: 4px 4px 16px 4px;
+  font-family: "RobotoCondensedBold", "Helvetica";
+  font-weight: bold;
+  font-size: 56px;
+  color: var(--theme-h2);
+}
+
+.container-sub h2 {
+  margin: 0 0 0 4px;
+}
+
+h3 {
+  font-family: "RobotoCondensedBold", "Helvetica";
+  font-weight: bold;
+  font-size: 36px;
+  margin: 8px auto 16px auto;
+}
+
+a {
+  font-family: "RobotoBold", "Helvetica";
+  font-weight: bold;
+  color: hsl(210, 100%, 50%);
+  text-decoration: none;
+}
+
+a:hover {
+  color: hsl(210, 100%, 35%);
+  text-decoration: none;
+}
+
+.footer {
+  text-align: center;
+  font-family: "RobotoRegular";
+  letter-spacing: 3px;
+  font-size: 16px;
+  margin: 32px 0;
+}
+
+.container-main {
+  display: flex;
+  justify-content: space-between;
+  flex-flow: column nowrap;
+}
+
+.container-sub {
+  padding: 16px;
+}
+
+.sub-content {
+  font-family: "RobotoLight", "Helvetica";
+  font-size: 20px;
+  letter-spacing: 1px;
+  line-height: 28px;
+
+  border-top: 6px solid var(--theme-h2);
+  border-radius: 10px;
+  padding: 16px 8px 8px 8px;
+}
+
+.showcase {
+  padding: 32px 0;
+}
+.showcase h2 {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.showcase h3 {
+  color: var(--theme-h3);
+}
+
+.showcase-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  flex-flow: column nowrap;
+}
+
+.showcase-content {
+  cursor: pointer;
+  flex: 1 1 50%;
+}
+
+.showcase-content {
+  transition: 0.2s;
+  font-weight: normal;
+  background-color: var(--theme-contrast);
+  font-family: "RobotoRegular", "Helvetica";
+  line-height: 28px;
+  text-align: justify;
+  color: var(--theme-lowlight);
+  border-left: 12px solid var(--theme-h3);
+  border-radius: 24px;
+  margin: 16px 16px;
+  padding: 24px;
+}
+.showcase-content:hover:not(.nolink) {
+  transition: 0.2s;
+  background-color: var(--theme-h2);
+}
+
+.switch-head {
+  background-color: #c0c0c0;
+  border-radius: 24px;
+  width: 24px;
+  height: 24px;
+}
+.switch-body {
+  display: flex;
+  flex-direction: row nowrap;
+  cursor: pointer;
+  transition: 0.5s;
+  background-color: #808080;
+  border-radius: 24px;
+  padding: 4px;
+  width: 48px;
+  height: 24px;
+  margin: 0 8px;
+}
+.switch-body[active=false] {
+  justify-content: flex-start;
+}
+.switch-body[active=true] {
+  justify-content: flex-end;
+}
+
+.theme-switch {
+  user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-family: "Arial";
+  font-size: 32px;
+  background-color: var(--theme-lowlight);
+}
+
+[humzview=landscape] {
+  flex-direction: row;
+}
+
+[humzview=portrait] {
+  flex-direction: column;
+}
+
+audio {
+  width: 100%;
+  margin-top: 8px;
+}

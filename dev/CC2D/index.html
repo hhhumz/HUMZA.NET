@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <style>
+      body {
+        background-color: #000000;
+        padding: 0;
+        margin: 0;
+      }
+      a:active, a:visited, a:link {
+        text-decoration: none;
+      }
+      #GameContainer {
+        display: flex;
+        flex-flow: row nowrap;
+        justify-content: center;
+        align-items: center;
+        cursor: none;
+        height:100%;
+      }
+      #CanvasMain {
+        border-radius: 16px;
+        opacity: 1;
+        font-smooth: never;
+        -webkit-font-smoothing : none;
+      }
+      #GameBackdrop1, #GameBackdrop2 {
+        border-radius: 16px;
+        background-size: 1400px 1400px;
+      }
+      #GameBackdrop1 {background-image: url(assets/bg_day.png);}
+      #GameBackdrop2 {background-image: url(assets/bg_night.png);}
+
+      #Debug {
+        position: fixed;
+      }
+      .monitors {
+        position: fixed;
+        left: 16px;
+        bottom: 16px;
+      }
+      .settings {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+      }
+      .debug-sub {
+        cursor: default;
+        margin-bottom: 8px;
+        padding: 8px;
+        font-size: 16px;
+        color: #ffffff;
+        background-color: #404040;
+        border-radius: 8px;
+        font-family: "Menlo";
+        font-weight: bold;
+        box-shadow: 2px 2px 2px #00000080;
+
+        user-select: none;
+        -moz-user-select: none;
+        -khtml-user-select: none;
+        -webkit-user-select: none;
+        -o-user-select: none;
+      }
+      .debug-sub.button {cursor: pointer;}
+      .settings {
+        text-align: right;
+      }
+      .settings .debug-sub {
+        width: 192px;
+      }
+      .settings .debug-sub span {
+        font-size: 12px;
+        margin-right: 8px;
+      }
+      .debug-sub.button[state=on]::after {
+        color: #00c000;
+        content:"  On";
+      }
+      .debug-sub.button[state=off]::after {
+        color: #c00000;
+        content:" Off";
+      }
+
+      #Monitor0 {background-color: #004080;}
+      #Monitor1 {background-color: #006000;}
+    </style>
+  </head>
+  <body>
+    <div id="GameContainer">
+
+      <div id="Debug" style="display: none;">
+        <div class="monitors">
+          <div class="debug-sub" id="Monitor0">--</div>
+          <div class="debug-sub" id="Monitor1">--</div>
+        </div>
+
+        <div class="settings">
+
+          <div class="debug-sub button" state="off" id="Setting0">Instabreak</div>
+          <div class="debug-sub button" state="off" id="Setting1">Hitboxes</div>
+          
+          <div class="debug-sub">
+            Zoom<br/>
+            <span id="Setting2Label">2.0</span><input id="Setting2" type="range" value="2" min="0.5" max="8" step="0.5"></input>
+          </div>
+          
+          <div class="debug-sub">
+            Render Distance<br/>
+            <span id="Setting3Label">64</span><input id="Setting3" type="range" value="64" min="16" max="256" step="8"></input>
+          </div>
+
+        </div>
+      </div>
+
+      <div id="GameBackdrop1">
+          <canvas id="CanvasMain"></canvas>
+      </div>
+
+    </div>
+    <script type="text/javascript" src="main.js"></script>
+    <script type="text/javascript" src="worldgen.js"></script>
+    <script type="text/javascript" src="recipes.js"></script>
+    <script type="text/javascript" src="init.js"></script>
+  </body>
+</html>

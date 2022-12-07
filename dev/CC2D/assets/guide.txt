@@ -1,0 +1,12 @@
+BLOCKS
+- colorize gray foliage -> H 90, S 100, L -50
+- walls: black overlay at 60% opacity
+
+MOB WALKING CYCLES
+- split legs
+- rotate legs by __ degrees
+- stack 4x
+
+tall mobs: 10->30
+wide mobs: 20->45
+steve's arms: 90->60->30->0
