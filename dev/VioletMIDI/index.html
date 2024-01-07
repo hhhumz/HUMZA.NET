@@ -1,10 +1,16 @@
 <html>
   <style>
+    #CanvasMain {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 0;
+    }
     body {
       padding: 0;
       margin: 0;
       background-color: #181818;
-      font-family: "Monaco","Courier New";
+      font-family: "Monaco", "Courier New";
       color: #c0c0c0;
       overflow: hidden;
       -moz-user-select: -moz-none;
@@ -90,13 +96,181 @@
       text-decoration: none;
       color: #8000ff;
     }
+    #ProjectMenu {
+      display: none;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background-color: #808080c0;
+      display: none;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      font-family: "Tahoma", "Helvetica";
+    }
+    .menu-column-wrapper {
+      display: flex;
+      flex-direction: row;
+    }
+    .menu-column {
+      flex: 1 0 50%;
+    }
+    .menu-section {
+      background-color: #303030;
+      margin: 16px;
+      padding: 16px;
+      border-radius: 8px;
+    }
+    .menu-return {
+      text-align: center;
+      margin: 16px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    .menu-clickable {
+      background-color: #6000c0;
+      border: 1px solid #400080;
+    }
+    .menu-clickable:hover {
+      background-color: #8000ff;
+    }
+    .menu-subsection {
+      display: flex;
+      flex-direction: row;
+      font-size: 24px;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .subsection-component.nogrow {
+      flex: 0 0 auto;
+    }
+    .subsection-component.yesgrow {
+      flex: 1 0 auto;
+    }
+    input[type=number] {
+      text-align: center;
+    }
+    input[type=range] {
+      width: 100%;
+    }
+    .track-option-row {
+      display: flex;
+      flex-direction: row;
+    }
+    .track-option {
+      flex: 1 0 auto;
+      padding: 8px;
+      text-align: center;
+    }
+    .oedit {
+      border-top-left-radius: 16px;
+    }
+    .odelete {
+      border-top-right-radius: 16px;
+    }
+    .owaveform: {
+      flex: 1 0 25%;
+    }
+    .owaveform:first-of-type {
+      border-bottom-left-radius: 16px;
+    }
+    .owaveform:last-of-type {
+      border-bottom-right-radius: 16px;
+    }
+    .track-option[picked="1"] {
+      border: 2px solid #ffffff;
+    }
+    .menu-button {
+      padding: 8px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .new-track {
+      font-size: 24px;
+      background-color: #808080;
+    }
+    .menu-track {
+      margin-bottom: 12px;
+    }
   </style>
   <head>
     <title>VioletMIDI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
-    <link rel="stylesheet" href="../../assets/style_fonts.css"
+    <link rel="stylesheet" href="../../assets/style_fonts.css"/>
   </head>
   <body>
+    <div id="ProjectMenu">
+      <div class="menu-clickable menu-return" id="menu_return" onclick="Violet.App.menu = false; Violet.App.DOMMenu.style.display = 'none';">
+        <h1>Back to Editor</h1>
+      </div>
+      <div class="menu-column-wrapper">
+        <div class="menu-column">
+          <div class="menu-section">
+            <h1>Tracks</h1>
+            <div id="track_wrapper">
+
+            </div>
+            <div class="menu-clickable menu-button new-track" onclick="Violet.Editor.addTrack('sawtooth')">+ New Track</div>
+          </div>
+        </div>
+        <div class="menu-column">
+          <div class="menu-section">
+            <h1>Project</h1>
+
+            <div class="menu-subsection">
+              <div class="subsection-component nogrow">
+                <label for="m_tempo">Tempo</label>
+              </div>
+              <div class="subsection-component nogrow">
+                <input id="m_tempo" name="m_tempo" type="number" min="40" max="400" step="1" onchange="
+                  if (this.value < 40) {this.value = 40;}
+                  if (this.value > 400) {this.value = 400;}
+                  if (Number.isNaN(this.value)) {this.value = 120;}
+                  document.getElementById('m_tempo_slider').value = this.value;
+                  Violet.Editor.setBPM(parseInt(this.value));
+                "/>
+              </div>
+              <div class="subsection-component yesgrow">
+                <input id="m_tempo_slider" name="m_tempo_slider" type="range" min="40" max="400" step="1" oninput="
+                  document.getElementById('m_tempo').value = this.value;
+                  Violet.Editor.setBPM(parseInt(this.value));
+                "/>
+              </div>
+            </div>
+
+            <div class="menu-subsection">
+              <div class="subsection-component nogrow">
+                <label for="m_tempo">Length</label>
+              </div>
+              <div class="subsection-component nogrow">
+                <input id="m_length" name="m_length" type="number" min="1" max="512" step="1" onchange="
+                  if (this.value < 1) {this.value = 1;}
+                  if (this.value > 512) {this.value = 512;}
+                  if (Number.isNaN(this.value)) {this.value = 8;}
+                  document.getElementById('m_length_slider').value = this.value;
+                  Violet.Editor.setLength(parseInt(this.value));
+                "/>
+              </div>
+              <div class="subsection-component yesgrow">
+                <input id="m_length_slider" name="m_length_slider" type="range" min="1" max="512" step="1" oninput="
+                  document.getElementById('m_length').value = this.value;
+                  Violet.Editor.setLength(parseInt(this.value));
+                "/>
+              </div>
+            </div>
+
+            <div class="menu-subsection">
+              <div class="subsection-component yesgrow menu-clickable menu-button" onclick="Violet.Editor.projectSave();">Save Project</div>
+              <div class="subsection-component yesgrow menu-clickable menu-button">
+                <input id="load_project_file_btn" style="height:100%;" onchange="Violet.Editor.projectLoad();" type="file"/>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
     <canvas style="display: none;" id="CanvasMain"></canvas>
     <div id="intro">
       <div class="heading">VioletMIDI</div>
@@ -105,14 +279,14 @@
         Ready to start composing? Choose your device type below to get started.
       </div>
       <div class="sub3">
-        This app is in the very early stages of development, and most features are still being implemented.
+        This is an early build of the app, so some features still need to be implemented.
       </div>
       <div class="button-container">
-        <input type="button" class="violet-button" value="Mobile" id="initMobile"/>
+        <input type="button" class="violet-button" value="Mobile (coming soon)" id="initMobile"/>
         <input type="button" class="violet-button" value="Desktop" id="initDesktop"/>
       </div>
       <div class="footer">
-        v0.0.2 &copy; 2022 <a href="http://humza.net">Humza Khan</a>
+        v0.0.9 &copy; 2023 <a href="#">Humza Khan</a>
       </div>
     </div>
 

@@ -7,28 +7,11 @@
                                   \     / ,--| .-. |  | .=./'-.  .-|  |`.'|  |  |  |  \  |  |
                                    \   /  |  | '-' |  |  `--. |  | |  |   |  |  |  '--'  |  |
                                     `-'   `--'`---'`--'`----' `--' `--'   `--`--`-------'`--'
-                                          '~-. VioletMIDI v0.2.0 © 2022 Humza Khan .-~'
+                                          '~-. VioletMIDI v0.9.0 © 2023 Humza Khan .-~'
 
  /'-   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -'\
 /-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\
 \*===============================================================================================================================*/
-
-/*
-  
-  TODO
-
-  - add ui icons
-  - implement button groups
-  - implement edit history (undo/redo)
-
-  - CLEAN UP CODE :D
-
-  ...
-
-  - partially generalize MIDI editor behavior
-  - implement tracks
-  
-*/
 
 let Violet = {};
 
@@ -41,7 +24,7 @@ let Violet = {};
 function noteArrayEncode(arr) {
   let str = "";
   for (const i in arr) {
-    str += `,${arr[i].pos}/${arr[i].pitch}/${arr[i].length}`
+    str += ` ${arr[i].pos}.${arr[i].pitch}.${arr[i].length}`
   }
   str = str.substr(1, str.length - 1);
   return str;
@@ -50,13 +33,41 @@ function noteArrayEncode(arr) {
 function noteArrayDecode(str) {
   let arr = [];
   if (str != "") {
-    let sub1 = str.split(",");
+    let sub1 = str.split(" ");
     for (const i in sub1) {
-      let sub2 = sub1[i].split("/");
+      let sub2 = sub1[i].split(".");
       arr.push(new Violet.Note(Number(sub2[0]), Number(sub2[1]), Number(sub2[2])));
     }
   }
   return arr;
+}
+
+function projectEncode() {
+  let str = `${Violet.Editor.bpm}.${Violet.Editor.length}`;
+  for (const t of Violet.Editor.tracks) {
+    str += `/${t.instrument.synth.options.oscillator.type}#${noteArrayEncode(t.region.notes)}`
+  }
+  return str;
+}
+
+function projectDecode(str) {
+  if (str == "" || str == null) {return;}
+  // clear current project
+  for (const t of Violet.Editor.tracks) {
+    Violet.Editor.deleteTrack(t.id)
+  }
+  // load from txt
+  let sub1 = str.split("/");
+  let sub2 = sub1[0].split(".");
+  Violet.Editor.setBPM(parseInt(sub2[0]));
+  Violet.Editor.setLength(parseInt(sub2[1]));
+  for (let i = 1; i < sub1.length; i++) {
+    sub2 = sub1[i].split("#");
+    const t = Violet.Editor.addTrack(sub2[0]);
+    t.region.notes = noteArrayDecode(sub2[1])
+  }
+  document.getElementById("menu_return").click();
+  Violet.Editor.setTrack(Violet.Editor.tracks[0].id)
 }
 
 function secondsToBlips(seconds, bpm) {
@@ -74,20 +85,127 @@ function secondsToBlips(seconds, bpm) {
  -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-
 \*===============================================================================================================================*/
 
-Violet.Project = class {
-  constructor(bpm, length) { // pos, length in measures
-    this.bpm = bpm;
-    this.length = length;
-    this.timeSignature = [4,4];
-    this.tracks = [];
+Violet.Track = class {
+  constructor(wf) {
+    this.id = Violet.Editor.nextTrackId;
+    Violet.Editor.nextTrackId++;
+    this.region = new Violet.Region(0, 64 * Violet.Editor.length);
+    this.instrument = new Violet.Instrument(wf);
+    // painstakingly build the corresponding DOM element for the track
+    this.dom = document.createElement("div");
+    this.dom.setAttribute("class", "menu-track");
+    this.dom.setAttribute("track-id", this.id);
+
+    const isSaw = String(Number( (wf == "sawtooth") ));
+    const isSqu = String(Number( (wf == "square") ));
+    const isTri = String(Number( (wf == "triangle") ));
+    const isSin = String(Number( (wf == "sine") ));
+
+    // edit button
+    let r, e;
+    r = document.createElement("div");
+    r.setAttribute("class", "track-option-row");
+    e = this.createDOMController("menu-clickable track-option oedit", "Edit");
+    e.onclick = function() {
+      Violet.Editor.setTrack(parseInt(this.getAttribute("track-id")));
+      document.getElementById("menu_return").click();
+    }
+    r.appendChild(e);
+
+    // delete button
+    e = this.createDOMController("menu-clickable track-option odelete", "Delete");
+    e.onclick = function() {
+      if (Violet.Editor.tracks.length != 1) {
+        if (confirm("Delete this track? (This cannot be undone.)")) {
+          Violet.Editor.deleteTrack(this.getAttribute("track-id"));
+        }
+      } else {
+        alert("Project must have at least one track");
+      }
+    }
+    r.appendChild(e);
+    this.dom.appendChild(r);
+
+    // waveform buttons
+    r = document.createElement("div");
+    r.setAttribute("class", "track-option-row");
+
+    e = this.createDOMController("menu-clickable track-option owaveform", "Sawtooth");
+    e.setAttribute("picked", isSaw);
+    e.onclick = function() {
+      const t = Violet.Track.get(this.getAttribute("track-id"));
+      for (const other_e of this.parentNode.childNodes) {
+        other_e.setAttribute("picked", "0");
+      }
+      t.instrument.synth.set({
+        oscillator: {type: "sawtooth"}
+      });
+      this.setAttribute("picked", "1");
+    }
+    r.appendChild(e);
+
+    e = this.createDOMController("menu-clickable track-option owaveform", "Square");
+    e.setAttribute("picked", isSqu);
+    e.onclick = function() {
+      const t = Violet.Track.get(this.getAttribute("track-id"));
+      for (const other_e of this.parentNode.childNodes) {
+        other_e.setAttribute("picked", "0");
+      }
+      t.instrument.synth.set({
+        oscillator: {type: "square"}
+      });
+      this.setAttribute("picked", "1");
+    }
+    r.appendChild(e);
+
+    e = this.createDOMController("menu-clickable track-option owaveform", "Triangle");
+    e.setAttribute("picked", isTri);
+    e.onclick = function() {
+      const t = Violet.Track.get(this.getAttribute("track-id"));
+      for (const other_e of this.parentNode.childNodes) {
+        other_e.setAttribute("picked", "0");
+      }
+      t.instrument.synth.set({
+        oscillator: {type: "triangle"}
+      });
+      this.setAttribute("picked", "1");
+    }
+    r.appendChild(e);
+
+    e = this.createDOMController("menu-clickable track-option owaveform", "Sine");
+    e.setAttribute("picked", isSin);
+    e.onclick = function() {
+      const t = Violet.Track.get(this.getAttribute("track-id"));
+      for (const other_e of this.parentNode.childNodes) {
+        other_e.setAttribute("picked", "0");
+      }
+      t.instrument.synth.set({
+        oscillator: {type: "sine"}
+      });
+      this.setAttribute("picked", "1");
+    }
+    r.appendChild(e);
+
+    this.dom.appendChild(r);
+    document.getElementById("track_wrapper").appendChild(this.dom);
+  }
+  createDOMController(className, innerHTML) {
+    const e = document.createElement("div");
+    e.setAttribute("track-id", this.id);
+    e.setAttribute("class", className);
+    e.innerHTML = innerHTML;
+    return e;
+  }
+  static get(id) {
+    id = parseInt(id);
+    for (const t of Violet.Editor.tracks) {
+      if (t.id == id) {
+        return t;
+      }
+    }
   }
 }
 
-Violet.Track = class {
-  constructor() {
-    this.regions = [];
-  }
-}
 
 Violet.Region = class {
   constructor(pos, length) { // pos, length in blips
@@ -156,18 +274,15 @@ Violet.View = class {
 \*===============================================================================================================================*/
 
 Violet.Instrument = class {
-  constructor() {
+  constructor(wf) {
     this.filter = new Tone.Filter(4500, "lowpass", -12).toDestination();
     this.synth = new Tone.PolySynth(Tone.Synth).connect(this.filter);
-    this.synth.options.oscillator.type = "sawtooth";
+    this.synth.options.oscillator.type = wf;
     this.synth.options.envelope.attack = 0.01;
     this.synth.options.envelope.sustain = 0.5;
     this.synth.options.envelope.decay = 2.0;
     this.synth.options.envelope.release = 0.25;
     this.synth.options.volume=-18;
-
-    // delet this
-    Tone.Transport.bpm.value = 180;
   }
 
   playNote(pitch, pos, length) {
@@ -466,6 +581,7 @@ Violet.App = {
   landscape: true,
   //
   editing: true, // true if interacting with editor, false if interacting with GUI
+  menu: false, // true if interacting with the project menu
   mousedown: false,
   //
   font: "Tahoma",
@@ -750,9 +866,18 @@ Violet.GUI.addButton("deselect", "Deselect", "editorRegionDefault", 0.50, 0.40, 
   Violet.Editor.selection = [];
 });
 
-Violet.GUI.addButton("undo", "Undo", "editorRegionDefault",         0.10, 0.53, 0.40, 0.11, Violet.App.colors.buttonColored);
-
-Violet.GUI.addButton("redo", "Redo", "editorRegionDefault",         0.50, 0.53, 0.40, 0.11, Violet.App.colors.buttonColored);
+Violet.GUI.addButton("project", "Project", "editorRegionDefault",         0.10, 0.53, 0.80, 0.11, Violet.App.colors.buttonColored, function() {
+  if (!Violet.App.menu) {
+    Violet.Editor.playback = true;
+    Violet.Editor.regionPlayback();
+    Violet.App.menu = true;
+    Violet.App.DOMMenu.style.display = "block";
+    document.getElementById("m_tempo").value = Violet.Editor.bpm;
+    document.getElementById("m_tempo_slider").value = Violet.Editor.bpm;
+    document.getElementById("m_length").value = Violet.Editor.length;
+    document.getElementById("m_length_slider").value = Violet.Editor.length;
+  }
+});
 
 Violet.GUI.addButton("play", "Play", "editorRegionDefault",         0.10, 0.66, 0.50, 0.11, Violet.App.colors.buttonColored, function() {
   Violet.Editor.regionPlayback();
@@ -799,8 +924,83 @@ Violet.GUI.addButton("modeLoop", "Set Loop", "editorRegionTools",   0.10, 0.82, 
 Violet.Editor = {
   // (should reference external properties)
   bpm: 120,
+  setBPM: function(x) {
+    this.bpm = x;
+    Tone.Transport.bpm.value = x;
+  },
+  length: 8,
+  setLength: function(x) { // x in measures
+    this.length = x;
+    for (t of this.tracks) {
+      t.region.length = x * 64;
+    }
+  },
   timeSignature: [4,4],
-  instrument: {},
+  nextTrackId: 0,
+  tracks: [],
+  currentTrack: {},
+  addTrack: function(wf) {
+    const t = new Violet.Track(wf);
+    this.tracks.push(t);
+    return t;
+  },
+  deleteTrack: function(id) {
+    id = parseInt(id)
+    // delete the track object
+    const t = Violet.Track.get(id);
+    const deletingCurrent = (t == Violet.Editor.currentTrack);
+    for (const i in Violet.Editor.tracks) {
+      if (Violet.Editor.tracks[i] == t) {
+        Violet.Editor.tracks.splice(i, 1);
+      }
+    }
+    // delete the track DOM element
+    for (const e of document.getElementById("track_wrapper").childNodes) {
+      if (!e.getAttribute) {continue;}
+      if (e.getAttribute("track-id") == id) {
+        e.remove();
+      }
+    }
+    if (deletingCurrent && Violet.Editor.tracks.length != 0) {
+      Violet.Editor.setTrack(Violet.Editor.tracks[0].id);
+    }
+  },
+  // select a track to edit
+  setTrack: function(n) {
+    this.currentTrack = Violet.Track.get(n);
+    Violet.Editor.selection = [];
+    try {
+      Violet.App.render();
+    } catch (ReferenceError) {
+
+    }
+  },
+
+  // project save & load functionality
+  projectSave: function() {
+    const e = document.createElement('a');
+    e.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(projectEncode()));
+    e.setAttribute('download', prompt("Enter a name for this project:") + ".vmp");
+    e.style.display = 'none';
+    document.body.appendChild(e);
+    e.click();
+    document.body.removeChild(e);
+  },
+
+  projectLoad: function() {
+    const f = load_project_file_btn.files[0];
+    const reader = new FileReader();
+    reader.addEventListener(
+      "load",
+      () => {
+        projectDecode(reader.result);
+      },
+      false,
+    );
+    if (f) {
+      reader.readAsText(f);
+    }
+  },
 
   // mouse properties
   mousedown: false,
@@ -825,7 +1025,6 @@ Violet.Editor = {
   playhead: 0,
   playbackBPM: 0,
   viewport: {},
-  region: {},
   selectedNote: {},
   hoveredPitch: -1,
   selection: [],
@@ -884,10 +1083,10 @@ Violet.Editor = {
     let targetPos = this.localXToPos(x);
     let targetPitch = this.localYToPitch(y, true);
     let targetNote = undefined;
-    for (const i in this.region.notes) {
-      if (this.region.notes[i].pitch == targetPitch) {
-        if ((this.region.notes[i].pos <= targetPos) && (targetPos <= this.region.notes[i].pos + this.region.notes[i].length)) {
-          targetNote = this.region.notes[i];
+    for (const i in this.currentTrack.region.notes) {
+      if (this.currentTrack.region.notes[i].pitch == targetPitch) {
+        if ((this.currentTrack.region.notes[i].pos <= targetPos) && (targetPos <= this.currentTrack.region.notes[i].pos + this.currentTrack.region.notes[i].length)) {
+          targetNote = this.currentTrack.region.notes[i];
         }
       }
     }
@@ -929,13 +1128,13 @@ Violet.Editor = {
   },
 
   insertNote: function(pos, pitch, length) {
-    let newNote = this.region.insertNote(pos, pitch, length);
+    let newNote = this.currentTrack.region.insertNote(pos, pitch, length);
     Violet.App.render();
     return newNote;
   },
 
   deleteNote: function(note) {
-    this.region.deleteNote(note);
+    this.currentTrack.region.deleteNote(note);
     Violet.App.render();
   },
 
@@ -949,21 +1148,21 @@ Violet.Editor = {
     if (this.playhead < 0) {
       this.playhead = 0;
     }
-    if (this.playhead > this.region.length) {
-      this.playhead = this.region.length;
+    if (this.playhead > this.currentTrack.region.length) {
+      this.playhead = this.currentTrack.region.length;
     }
   },
 
   // main draw function
   draw: function() {
     Violet.Renderer.clear();
-    Violet.Renderer.drawMIDIBackdrop(this.region, this.viewport, this.timeSignature);
-    Violet.Renderer.drawNotes(this.region.notes, this.viewport, Violet.App.colors.note);
+    Violet.Renderer.drawMIDIBackdrop(this.currentTrack.region, this.viewport, this.timeSignature);
+    Violet.Renderer.drawNotes(this.currentTrack.region.notes, this.viewport, Violet.App.colors.note);
     Violet.Renderer.drawNotes(this.selection, this.viewport, Violet.App.colors.noteSelected);
     if (this.selectedNote instanceof Violet.Note) {
       Violet.Renderer.drawNotes([this.selectedNote], this.viewport, Violet.App.colors.noteHandle);
     }
-    Violet.Renderer.drawTimeline(this.region.length, this.viewport, this.timeSignature, this.playbackLoop, this.playbackLoopStart, this.playbackLoopEnd);
+    Violet.Renderer.drawTimeline(this.currentTrack.region.length, this.viewport, this.timeSignature, this.playbackLoop, this.playbackLoopStart, this.playbackLoopEnd);
     Violet.Renderer.drawPlayhead(this.viewport,this.playhead);
     Violet.Renderer.drawPianoSidebar(this.viewport, this.hoveredPitch);
     if (Violet.Editor.selecting) {
@@ -974,7 +1173,7 @@ Violet.Editor = {
   // playback functions
   regionPlayback: function() {
     if (!this.playback) {
-      if (this.region.notes.length > 0) {
+      if (this.currentTrack.region.notes.length > 0) { // fix
         this.playback = true;
         this.playbackBPM = Tone.Transport.bpm.value;
         const osc = new Tone.Oscillator().toDestination();
@@ -982,9 +1181,11 @@ Violet.Editor = {
           // REGION SCANNER FUNCTION
           if (this.playback) {
             // scan notes
-            for (const i in this.region.notes) {
-              if (this.playhead == this.region.notes[i].pos) {
-                this.instrument.playScheduledNote(this.region.notes[i].pitch, time, this.region.notes[i].length);
+            for (const j of this.tracks) {
+              for (const i in j.region.notes) {
+                if (this.playhead == j.region.notes[i].pos) {
+                  j.instrument.playScheduledNote(j.region.notes[i].pitch, time, j.region.notes[i].length);
+                }
               }
             }
             this.playhead++;
@@ -999,7 +1200,7 @@ Violet.Editor = {
               }
             } else {
               // if loop mode is off
-              if (this.playhead >= this.region.length) {
+              if (this.playhead >= this.currentTrack.region.length) {
                 this.playhead = 0;
                 this.playback = false;
               }
@@ -1081,7 +1282,7 @@ Violet.Editor = {
 
       // play hovered note
       if ((this.editMode == 2) || (((this.editMode == 3) || (this.editMode == 5)) && (this.plurality != 0))) {
-        this.instrument.playNote(this.selectedNote.pitch, 0, Violet.App.NOTE_16);
+        this.currentTrack.instrument.playNote(this.selectedNote.pitch, 0, Violet.App.NOTE_16);
         this.hoveredPitch = this.selectedNote.pitch;
         this.priorHoveredPitch = this.selectedNote.pitch;
       }
@@ -1118,7 +1319,7 @@ Violet.Editor = {
           let paste = noteArrayDecode(this.clipboard);
           let handle = paste[0];
           for (const i in paste) {
-            this.region.notes.push(paste[i]);
+            this.currentTrack.region.notes.push(paste[i]);
             this.selection.push(paste[i]);
             // use the bottom-leftmost note as the "handle"
             if (paste[i].pos < handle.pos) {
@@ -1222,7 +1423,7 @@ Violet.Editor = {
           }
           // play hovered note
           if (this.priorHoveredPitch != this.selectedNote.pitch) {
-            this.instrument.playNote(this.selectedNote.pitch, 0, Violet.App.NOTE_16);
+            this.currentTrack.instrument.playNote(this.selectedNote.pitch, 0, Violet.App.NOTE_16);
             this.hoveredPitch = this.selectedNote.pitch;
           }
           this.priorHoveredPitch = this.selectedNote.pitch;
@@ -1254,12 +1455,12 @@ Violet.Editor = {
 
       // *** [editMode 5] Selecting notes
       if (this.editMode == 5) {
-        for (const i in this.region.notes) {
+        for (const i in this.currentTrack.region.notes) {
           if (
-            (this.noteInRect(this.opStartX, this.opStartY, this.opEndX, this.opEndY, this.region.notes[i])) &&
-            (!this.isSelected(this.region.notes[i]))
+            (this.noteInRect(this.opStartX, this.opStartY, this.opEndX, this.opEndY, this.currentTrack.region.notes[i])) &&
+            (!this.isSelected(this.currentTrack.region.notes[i]))
           ) {
-            this.selection.push(this.region.notes[i]);
+            this.selection.push(this.currentTrack.region.notes[i]);
           }
         }
       }
@@ -1284,14 +1485,15 @@ Violet.Editor = {
 \*===============================================================================================================================*/
 
 // initialize editor
-Violet.Editor.instrument = new Violet.Instrument();
-Violet.Editor.region = new Violet.Region(0, 512);
+Violet.Editor.addTrack("sawtooth");
+Violet.Editor.setTrack(0);
 Violet.Editor.viewport = new Violet.View(0, 1174, 1.9, 13);
 
 // test region (redbone - childish gambino)
-//Violet.Editor.region.notes = noteArrayDecode('368/37/80,320/44/48,448/46/64,256/45/64,192/46/64,256/52/64,112/37/80,192/54/64,448/54/64,320/54/48,112/56/80,368/56/80,432/56/16,64/54/48,64/44/48,80/61/16,192/61/64,336/61/16,368/61/80,320/59/16,256/61/64,448/61/16,96/63/16,112/64/80,64/59/16,0/52/64,48/61/16,0/45/64,464/63/16,480/64/16,352/63/16,96/68/16,32/63/16,80/71/16,192/71/16,16/64/16,0/61/32,112/73/80,208/73/16,64/75/16,320/75/16,48/76/16,224/76/16,336/76/16,368/76/144,32/78/16,352/78/16,16/80/16,256/80/64,240/83/16,496/68/16');
+//Violet.Editor.region.notes = noteArrayDecode('368.37.80 320.44.48 448.46.64 256.45.64 192.46.64 256.52.64 112.37.80 192.54.64 448.54.64 320.54.48 112.56.80 368.56.80 432.56.16 64.54.48 64.44.48 80.61.16 192.61.64 336.61.16 368.61.80 320.59.16 256.61.64 448.61.16 96.63.16 112.64.80 64.59.16 0.52.64 48.61.16 0.45.64 464.63.16 480.64.16 352.63.16 96.68.16 32.63.16 80.71.16 192.71.16 16.64.16 0.61.32 112.73.80 208.73.16 64.75.16 320.75.16 48.76.16 224.76.16 336.76.16 368.76.144 32.78.16 352.78.16 16.80.16 256.80.64 240.83.16 496.68.16');
 
 Violet.App.DOMCanvas = document.getElementById("CanvasMain");
+Violet.App.DOMMenu = document.getElementById("ProjectMenu");
 let c = Violet.App.DOMCanvas.getContext("2d");
 Violet.GUI.aux.setEditMode(2);
 
@@ -1363,6 +1565,6 @@ Violet.App.initialize = async function(desktop) {
   Violet.App.__beginResizeTest();
 }
 
-document.getElementById("initMobile").addEventListener("click",function() {Violet.App.initialize(false)});
+//document.getElementById("initMobile").addEventListener("click",function() {Violet.App.initialize(false)});
 document.getElementById("initDesktop").addEventListener("click",function() {Violet.App.initialize(true)});
 
