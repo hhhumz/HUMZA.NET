@@ -23,7 +23,7 @@ body, body[humztheme=dark] {
   --theme-lowlight: #303030;
 }
 body[humztheme=light] {
-  --theme-bg: #e0e0e0;
+  --theme-bg: #f0f0f0;
   --theme-h2: hsl(210, 50%, 40%);
   --theme-h3: hsl(210, 50%, 50%);
   --theme-contrast: hsl(210, 50%, 20%);
